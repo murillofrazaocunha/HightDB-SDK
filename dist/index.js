@@ -9,11 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.HightDB = void 0;
 const net_1 = require("net");
 class HightDB {
     constructor(config) {
         this.client = null;
         this.currentDatabase = null;
+        this.reconnectInterval = 5000; // Intervalo de reconexão em milissegundos
         this.config = config;
     }
     connect() {
@@ -21,17 +23,35 @@ class HightDB {
             return new Promise((resolve, reject) => {
                 this.client = (0, net_1.createConnection)(this.config.port, this.config.host, () => {
                     this.client.write(`ENTRAR ${this.config.username} ${this.config.password}\n`);
-                    this.client.once('data', (data) => {
-                        if (data.toString().includes('Autenticado com sucesso')) {
-                            resolve();
-                        }
-                        else {
-                            reject(new Error('Falha na autenticação'));
-                        }
-                    });
+                    setTimeout(() => {
+                        this.client.once('data', (data) => __awaiter(this, void 0, void 0, function* () {
+                            console.log(data.toString());
+                            if (data.toString().includes('Autenticado com sucesso')) {
+                                if (this.config.table) {
+                                    try {
+                                        yield this.query('USAR ' + this.config.table);
+                                    }
+                                    catch (error) {
+                                        console.error('Erro ao usar tabela:', error);
+                                        reject(error);
+                                    }
+                                }
+                                console.log('Conectado com sucesso');
+                                resolve();
+                            }
+                            else {
+                                reject(new Error('Falha na autenticação'));
+                            }
+                        }));
+                    }, 100);
                 });
                 this.client.on('error', (err) => {
+                    console.error('Erro no cliente:', err);
                     reject(err);
+                });
+                this.client.on('close', () => {
+                    console.log('Conexão encerrada. Tentando reconectar...');
+                    this.reconnect();
                 });
             });
         });
@@ -39,7 +59,92 @@ class HightDB {
     disconnect() {
         if (this.client) {
             this.client.end();
+            console.log('Desconectado do servidor');
         }
+    }
+    reconnect() {
+        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield this.connect();
+            }
+            catch (error) {
+                console.error('Erro ao reconectar:', error);
+                this.reconnect();
+            }
+        }), this.reconnectInterval);
+    }
+    createDatabase(name, schema, ifNotExists) {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            let sql = `CRIAR ${name} VALORES `;
+            for (const key in schema.fields) {
+                const field = schema.fields[key];
+                if ((field.type === 'string' || field.type == "int") && field.min !== null && field.max !== null) {
+                    sql += `${key}=${field.type}(${field.min},${field.max})`;
+                }
+                else {
+                    sql += `${key}=${field.type}`;
+                }
+                if (field.required) {
+                    sql += '-required';
+                }
+                if (field.unique) {
+                    sql += '-unique';
+                }
+                sql += ' ';
+            }
+            try {
+                const query = yield this.query(sql);
+                if (typeof query === 'string') {
+                    if (query.includes('já existe')) {
+                        if (ifNotExists) {
+                            resolve({
+                                success: true,
+                                message: query,
+                                records: null
+                            });
+                        }
+                        else {
+                            reject({
+                                success: false,
+                                message: query,
+                                records: null
+                            });
+                        }
+                    }
+                    else if (query.includes('Banco criado com schema')) {
+                        resolve({
+                            success: true,
+                            message: query,
+                            records: null
+                        });
+                    }
+                }
+            }
+            catch (e) {
+                reject({
+                    success: false,
+                    message: e,
+                    records: null
+                });
+            }
+        }));
+    }
+    query(sql) {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            const query = yield this.sendCommand(sql);
+            if (query.includes('ERRO:')) {
+                reject(new Error(query));
+            }
+            else {
+                try {
+                    const result = JSON.parse(query);
+                    resolve(result);
+                }
+                catch (error) {
+                    resolve(query);
+                }
+            }
+        }));
     }
     sendCommand(command) {
         return new Promise((resolve, reject) => {
@@ -56,111 +161,198 @@ class HightDB {
             });
         });
     }
-    listarBancos() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.sendCommand('VER_BANCOS');
-            return JSON.parse(response);
-        });
+    listar() {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.query("LISTAR");
+                if (typeof result === 'string') {
+                    reject(new Error(result));
+                }
+                else {
+                    resolve({
+                        success: true,
+                        message: '',
+                        records: result
+                    });
+                }
+            }
+            catch (error) {
+                reject({
+                    success: false,
+                    message: error,
+                    records: null
+                });
+            }
+        }));
     }
-    usarBanco(nome) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendCommand(`USAR ${nome}`);
-            this.currentDatabase = nome;
-        });
+    buscar(query) {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            if (!query || Object.keys(query).length === 0) {
+                reject(new Error('Query não pode ser vazia'));
+                return;
+            }
+            try {
+                let v = "";
+                for (const key in query) {
+                    if (typeof query[key] === 'string') {
+                        query[key] = `"${query[key]}"`;
+                    }
+                    else if (typeof query[key] === 'boolean') {
+                        query[key] = query[key] ? 'true' : 'false';
+                    }
+                    else if (typeof query[key] === 'number') {
+                        query[key] = query[key].toString();
+                    }
+                    v += `${key}=${query[key]} `;
+                }
+                const result = yield this.query(`BUSCAR ${v}`);
+                if (typeof result === 'string') {
+                    reject({
+                        success: false,
+                        message: result,
+                        records: null
+                    });
+                    throw new Error(result);
+                }
+                else {
+                    resolve({
+                        success: true,
+                        message: '',
+                        records: result
+                    });
+                }
+            }
+            catch (error) {
+                reject({
+                    success: false,
+                    message: error,
+                    records: null
+                });
+            }
+        }));
     }
-    inserirRegistro(record) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const recordString = Object.entries(record)
-                .map(([key, value]) => `${key}=${value}`)
-                .join(' ');
-            yield this.sendCommand(`INSERIR ${recordString}`);
-        });
+    editar(query, where) {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            if (!query || Object.keys(query).length === 0) {
+                reject(new Error('Query não pode ser vazia'));
+                return;
+            }
+            try {
+                let v = "";
+                for (const key in query) {
+                    if (typeof query[key] === 'string') {
+                        query[key] = `"${query[key]}"`;
+                    }
+                    else if (typeof query[key] === 'boolean') {
+                        query[key] = query[key] ? 'true' : 'false';
+                    }
+                    else if (typeof query[key] === 'number') {
+                        query[key] = query[key].toString();
+                    }
+                    v += `${key}=${query[key]} `;
+                }
+                let w = "";
+                for (const key in where) {
+                    if (typeof where[key] === 'string') {
+                        where[key] = `"${where[key]}"`;
+                    }
+                    else if (typeof where[key] === 'boolean') {
+                        where[key] = where[key] ? 'true' : 'false';
+                    }
+                    else if (typeof where[key] === 'number') {
+                        where[key] = where[key].toString();
+                    }
+                    w += `${key}=${where[key]} `;
+                }
+                const result = yield this.query(`EDITAR ${v} ONDE ${w}`);
+                if (typeof result === 'string' && result.includes('registro(s) atualizado(s).')) {
+                    resolve({
+                        success: true,
+                        message: result,
+                        records: null
+                    });
+                }
+            }
+            catch (error) {
+                reject({
+                    success: false,
+                    message: error,
+                    records: null
+                });
+            }
+        }));
     }
-    editarRegistro(campo, valor, ondeCampo, ondeValor) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendCommand(`EDITAR ${campo}=${valor} ONDE ${ondeCampo}=${ondeValor}`);
-        });
+    inserir(record) {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            let v = "";
+            for (const key in record) {
+                if (typeof record[key] === 'string') {
+                    record[key] = `"${record[key]}"`;
+                }
+                else if (typeof record[key] === 'boolean') {
+                    record[key] = record[key] ? 'true' : 'false';
+                }
+                else if (typeof record[key] === 'number') {
+                    record[key] = record[key].toString();
+                }
+                v += `${key}=${record[key]} `;
+            }
+            try {
+                const t = yield this.query(`INSERIR ${v}`);
+                if (typeof t === 'string' && t.startsWith('Registro inserido.')) {
+                    resolve({
+                        success: true,
+                        message: t,
+                        records: null
+                    });
+                }
+            }
+            catch (e) {
+                reject({
+                    success: false,
+                    message: e,
+                    records: null
+                });
+            }
+        }));
     }
-    buscarRegistros(campo, valor) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.sendCommand(`BUSCAR ${campo}=${valor}`);
-            return JSON.parse(response);
-        });
-    }
-    listarRegistros() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.sendCommand('LISTAR');
-            return JSON.parse(response);
-        });
-    }
-    deletarRegistro(campo, valor) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendCommand(`DELETAR ${campo}=${valor}`);
-        });
-    }
-    visualizarSchema() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.sendCommand('SCHEMA');
-            return JSON.parse(response);
-        });
-    }
-    criarUsuario(user) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendCommand(`CRIAR_USUARIO ${user.username} ${user.password} ${user.role}`);
-        });
-    }
-    trocarSenha(username, novaSenha) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendCommand(`TROCAR_SENHA ${username} ${novaSenha}`);
-        });
-    }
-    gerenciarPermissao(nomeBanco, username, acao) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendCommand(`PERMISSAO ${nomeBanco} ${username} ${acao}`);
-        });
+    deletar(query) {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            if (!query || Object.keys(query).length === 0) {
+                reject(new Error('Query não pode ser vazia'));
+                return;
+            }
+            try {
+                let v = "";
+                for (const key in query) {
+                    if (typeof query[key] === 'string') {
+                        query[key] = `"${query[key]}"`;
+                    }
+                    else if (typeof query[key] === 'boolean') {
+                        query[key] = query[key] ? 'true' : 'false';
+                    }
+                    else if (typeof query[key] === 'number') {
+                        query[key] = query[key].toString();
+                    }
+                    v += `${key}=${query[key]} `;
+                }
+                const result = yield this.query(`DELETAR ${v}`);
+                if (typeof result === 'string' && result.includes('registro(s) removido(s).')) {
+                    resolve({
+                        success: true,
+                        message: result,
+                        records: null
+                    });
+                }
+            }
+            catch (error) {
+                reject({
+                    success: false,
+                    message: error,
+                    records: null
+                });
+            }
+        }));
     }
 }
-// Exemplo de uso
-function main() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const config = {
-            host: 'localhost',
-            port: 1525,
-            username: 'root',
-            password: 'qz5rIDaYXYqBzPhP'
-        };
-        const client = new HightDB(config);
-        try {
-            yield client.connect();
-            console.log('Conectado ao HightDB');
-            const bancos = yield client.listarBancos();
-            console.log('Bancos de dados:', bancos);
-            yield client.usarBanco('clientes');
-            console.log('Usando banco de dados "clientes"');
-            yield client.inserirRegistro({ id: 1, nome: 'João', email: 'joao@example.com' });
-            console.log('Registro inserido');
-            const registros = yield client.listarRegistros();
-            console.log('Registros:', registros);
-            yield client.editarRegistro('email', 'joao_novo@example.com', 'id', 1);
-            console.log('Registro editado');
-            const registrosBuscados = yield client.buscarRegistros('nome', 'João');
-            console.log('Registros buscados:', registrosBuscados);
-            yield client.deletarRegistro('id', 1);
-            console.log('Registro deletado');
-            const schema = yield client.visualizarSchema();
-            console.log('Schema do banco de dados:', schema);
-            yield client.criarUsuario({ username: 'maria', password: 'senha123', role: 'user' });
-            console.log('Usuário criado');
-            yield client.trocarSenha('maria', 'nova_senha123');
-            console.log('Senha trocada');
-            yield client.gerenciarPermissao('clientes', 'maria', 'adicionar');
-            console.log('Permissão adicionada');
-            client.disconnect();
-            console.log('Desconectado do HightDB');
-        }
-        catch (error) {
-            console.error('Erro:', error);
-        }
-    });
-}
-main();
+exports.HightDB = HightDB;
