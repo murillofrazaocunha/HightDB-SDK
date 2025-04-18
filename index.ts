@@ -23,7 +23,6 @@ export class HightDB implements HightDBClient {
                                 try {
                                     await this.query('USAR aero ' + this.config.aero);
                                 } catch (error) {
-                                    console.error('Erro ao usar tabela:', error);
                                     reject(error);
                                 }
                             }
