@@ -26,7 +26,8 @@ export interface HightDBConfig {
     port: number;
     username: string;
     password: string;
-    table: string | null;
+    aero?: string | null;
+    reconnectInterval: number | 5000
 }
 
 export interface HightDBClient {
@@ -36,7 +37,6 @@ export interface HightDBClient {
 
     inserir(record: Record[]): Promise<Result>;
 
-    listar(): Promise<Result>;
 
     buscar(query: Record): Promise<Result>;
 

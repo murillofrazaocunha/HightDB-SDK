@@ -1,11 +1,10 @@
 import { createConnection, Socket } from 'net';
-import { HightDBConfig, Record, TableSchema, Result, HightDBClient } from './types';
+import { HightDBConfig, Record, TableSchema, Result, HightDBClient } from './src/types';
 
 export class HightDB implements HightDBClient {
     private config: HightDBConfig;
     private client: Socket | null = null;
     private currentDatabase: string | null = null;
-    private reconnectInterval: number = 5000; // Intervalo de reconexão em milissegundos
 
     constructor(config: HightDBConfig) {
         this.config = config;
@@ -20,9 +19,9 @@ export class HightDB implements HightDBClient {
                     this.client!.once('data', async (data) => {
                         console.log(data.toString());
                         if (data.toString().includes('Autenticado com sucesso')) {
-                            if (this.config.table) {
+                            if (this.config.aero) {
                                 try {
-                                    await this.query('USAR ' + this.config.table);
+                                    await this.query('USAR aero' + this.config.aero);
                                 } catch (error) {
                                     console.error('Erro ao usar tabela:', error);
                                     reject(error);
@@ -64,12 +63,12 @@ export class HightDB implements HightDBClient {
                 console.error('Erro ao reconectar:', error);
                 this.reconnect();
             }
-        }, this.reconnectInterval);
+        }, this.config.reconnectInterval);
     }
 
     createDatabase(name: string, schema: TableSchema, ifNotExists: boolean): Promise<Result> {
         return new Promise(async (resolve, reject) => {
-            let sql = `CRIAR ${name} VALORES `;
+            let sql = `CRIAR db ${name} VALORES `;
             for (const key in schema.fields) {
                 const field = schema.fields[key];
                 if ((field.type === 'string' || field.type == "int") && field.min !== null && field.max !== null) {
@@ -156,28 +155,7 @@ export class HightDB implements HightDBClient {
         });
     }
 
-    listar(): Promise<Result> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const result = await this.query("LISTAR");
-                if (typeof result === 'string') {
-                    reject(new Error(result));
-                } else {
-                    resolve({
-                        success: true,
-                        message: '',
-                        records: result
-                    });
-                }
-            } catch (error) {
-                reject({
-                    success: false,
-                    message: error,
-                    records: null
-                });
-            }
-        });
-    }
+
 
     buscar(query: Record): Promise<Result> {
         return new Promise(async (resolve, reject) => {
