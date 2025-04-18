@@ -37,6 +37,7 @@ export interface HightDBClient {
 
     inserir(record: Record[]): Promise<Result>;
 
+    listarDb(): Promise<Result>;
 
     buscar(query: Record): Promise<Result>;
 

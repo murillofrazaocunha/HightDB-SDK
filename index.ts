@@ -314,4 +314,32 @@ export class HightDB implements HightDBClient {
             }
         })
     }
+
+    listarDb(): Promise<Result> {
+        return new Promise(async (resolve, reject) => {
+            const result = await this.query(`LISTAR db`);
+            try {
+                if (typeof result === 'string') {
+                    reject({
+                        success: false,
+                        message: result,
+                        records: null
+                    });
+                    throw new Error(result)
+                } else {
+                    resolve({
+                        success: true,
+                        message: '',
+                        records: result
+                    });
+                }
+            } catch (e) {
+                reject({
+                    success: false,
+                    message: e,
+                    records: null
+                });
+            }
+        })
+    }
 }
