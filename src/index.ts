@@ -1,5 +1,5 @@
 import { createConnection, Socket } from 'net';
-import { HightDBConfig, Record, TableSchema, Result, HightDBClient } from './src/types';
+import { HightDBConfig, Record, TableSchema, Result, HightDBClient } from './types';
 
 export class HightDB implements HightDBClient {
     private config: HightDBConfig;
