@@ -21,7 +21,7 @@ export class HightDB implements HightDBClient {
                         if (data.toString().includes('Autenticado com sucesso')) {
                             if (this.config.aero) {
                                 try {
-                                    await this.query('USAR aero' + this.config.aero);
+                                    await this.query('USAR aero ' + this.config.aero);
                                 } catch (error) {
                                     console.error('Erro ao usar tabela:', error);
                                     reject(error);
