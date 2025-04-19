@@ -345,10 +345,10 @@ export class HightDB implements HightDBClient {
         })
     }
 
-    listarDb(): Promise<Result> {
+    listarDb(db:string): Promise<Result> {
         const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
-            const result = await this.query(`LISTAR db`);
+            const result = await this.query(`LISTAR db ${db}`);
             try {
                 if (typeof result === 'string') {
                     reject({
