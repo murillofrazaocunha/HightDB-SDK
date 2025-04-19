@@ -151,6 +151,7 @@ export class HightDB implements HightDBClient {
             });
 
             this.client.once('error', (err) => {
+                console.log("amigao")
                 reject(err);
             });
         });
