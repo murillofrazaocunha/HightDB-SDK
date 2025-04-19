@@ -72,6 +72,7 @@ class HightDB {
         }), this.config.reconnectInterval);
     }
     createDatabase(name, schema, ifNotExists) {
+        const stack = new Error().stack;
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             let sql = `CRIAR db ${name} VALORES `;
             for (const key in schema.fields) {
@@ -96,33 +97,41 @@ class HightDB {
                     if (query.includes('já existe')) {
                         if (ifNotExists) {
                             resolve({
+                                code: 'create_db',
                                 success: true,
                                 message: query,
-                                records: null
+                                records: null,
+                                stack: stack
                             });
                         }
                         else {
                             reject({
+                                code: 'create_db',
                                 success: false,
                                 message: query,
-                                records: null
+                                records: null,
+                                stack: stack
                             });
                         }
                     }
                     else if (query.includes('Banco criado com schema')) {
                         resolve({
+                            code: 'create_db',
                             success: true,
                             message: query,
-                            records: null
+                            records: null,
+                            stack: stack
                         });
                     }
                 }
             }
             catch (e) {
                 reject({
+                    code: 'create_db',
                     success: false,
                     message: e,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         }));
@@ -160,6 +169,7 @@ class HightDB {
         });
     }
     buscar(db, query) {
+        const stack = new Error().stack;
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -182,30 +192,37 @@ class HightDB {
                 const result = yield this.query(`BUSCAR ${db} ${v}`);
                 if (typeof result === 'string') {
                     reject({
+                        code: 'search',
                         success: false,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                     throw new Error(result);
                 }
                 else {
                     resolve({
+                        code: 'search',
                         success: true,
                         message: '',
-                        records: result
+                        records: result,
+                        stack: stack
                     });
                 }
             }
             catch (error) {
                 reject({
+                    code: 'search',
                     success: false,
                     message: error,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         }));
     }
     editar(db, query, where) {
+        const stack = new Error().stack;
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -241,22 +258,27 @@ class HightDB {
                 const result = yield this.query(`EDITAR ${db} ${v} ONDE ${w}`);
                 if (typeof result === 'string' && result.includes('registro(s) atualizado(s).')) {
                     resolve({
+                        code: 'edit',
                         success: true,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                 }
             }
             catch (error) {
                 reject({
+                    code: 'edit',
                     success: false,
                     message: error,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         }));
     }
     inserir(db, record) {
+        const stack = new Error().stack;
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             let v = "";
             for (const key in record) {
@@ -275,22 +297,27 @@ class HightDB {
                 const t = yield this.query(`INSERIR ${db} ${v}`);
                 if (typeof t === 'string' && t.startsWith('Registro inserido.')) {
                     resolve({
+                        code: 'insert',
                         success: true,
                         message: t,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                 }
             }
             catch (e) {
                 reject({
+                    code: 'insert',
                     success: false,
                     message: e,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         }));
     }
     deletar(db, query) {
+        const stack = new Error().stack;
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -313,46 +340,57 @@ class HightDB {
                 const result = yield this.query(`DELETAR ${db} ${v}`);
                 if (typeof result === 'string' && result.includes('registro(s) removido(s).')) {
                     resolve({
+                        code: 'delete',
                         success: true,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                 }
             }
             catch (error) {
                 reject({
+                    code: 'delete',
                     success: false,
                     message: error,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         }));
     }
-    listarDb() {
+    listarDb(db) {
+        const stack = new Error().stack;
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-            const result = yield this.query(`LISTAR db`);
+            const result = yield this.query(`LISTAR db ${db}`);
             try {
                 if (typeof result === 'string') {
                     reject({
+                        code: 'list',
                         success: false,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                     throw new Error(result);
                 }
                 else {
                     resolve({
+                        code: 'list',
                         success: true,
                         message: '',
-                        records: result
+                        records: result,
+                        stack: stack
                     });
                 }
             }
             catch (e) {
                 reject({
+                    code: 'list',
                     success: false,
                     message: e,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         }));
