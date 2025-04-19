@@ -28,10 +28,9 @@ class HightDB {
                             if (data.toString().includes('Autenticado com sucesso')) {
                                 if (this.config.aero) {
                                     try {
-                                        yield this.query('USAR aero' + this.config.aero);
+                                        yield this.query('USAR aero ' + this.config.aero);
                                     }
                                     catch (error) {
-                                        console.error('Erro ao usar tabela:', error);
                                         reject(error);
                                     }
                                 }
@@ -160,7 +159,7 @@ class HightDB {
             });
         });
     }
-    buscar(query) {
+    buscar(db, query) {
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -180,7 +179,7 @@ class HightDB {
                     }
                     v += `${key}=${query[key]} `;
                 }
-                const result = yield this.query(`BUSCAR ${v}`);
+                const result = yield this.query(`BUSCAR ${db} ${v}`);
                 if (typeof result === 'string') {
                     reject({
                         success: false,
@@ -206,7 +205,7 @@ class HightDB {
             }
         }));
     }
-    editar(query, where) {
+    editar(db, query, where) {
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -239,7 +238,7 @@ class HightDB {
                     }
                     w += `${key}=${where[key]} `;
                 }
-                const result = yield this.query(`EDITAR ${v} ONDE ${w}`);
+                const result = yield this.query(`EDITAR ${db} ${v} ONDE ${w}`);
                 if (typeof result === 'string' && result.includes('registro(s) atualizado(s).')) {
                     resolve({
                         success: true,
@@ -257,7 +256,7 @@ class HightDB {
             }
         }));
     }
-    inserir(record) {
+    inserir(db, record) {
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             let v = "";
             for (const key in record) {
@@ -273,7 +272,7 @@ class HightDB {
                 v += `${key}=${record[key]} `;
             }
             try {
-                const t = yield this.query(`INSERIR ${v}`);
+                const t = yield this.query(`INSERIR ${db} ${v}`);
                 if (typeof t === 'string' && t.startsWith('Registro inserido.')) {
                     resolve({
                         success: true,
@@ -291,7 +290,7 @@ class HightDB {
             }
         }));
     }
-    deletar(query) {
+    deletar(db, query) {
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -311,7 +310,7 @@ class HightDB {
                     }
                     v += `${key}=${query[key]} `;
                 }
-                const result = yield this.query(`DELETAR ${v}`);
+                const result = yield this.query(`DELETAR ${db} ${v}`);
                 if (typeof result === 'string' && result.includes('registro(s) removido(s).')) {
                     resolve({
                         success: true,

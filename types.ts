@@ -35,15 +35,15 @@ export interface HightDBClient {
     disconnect(): void;
     query(sql: string): Promise<Record[] | string>;
 
-    inserir(record: Record[]): Promise<Result>;
+    inserir(db:string, record: Record[]): Promise<Result>;
 
-    listarDb(): Promise<Result>;
+    listarDb(db:string): Promise<Result>;
 
-    buscar(query: Record): Promise<Result>;
+    buscar(db:string, query: Record): Promise<Result>;
 
-    editar(query: Record, where: Record): Promise<Result>;
+    editar(db:string, query: Record, where: Record): Promise<Result>;
 
-    deletar(query: Record): Promise<Result>;
+    deletar(db:string, query: Record): Promise<Result>;
 
     createDatabase(name: string, schema: TableSchema, ifNotExists: boolean): Promise<Result>
 }

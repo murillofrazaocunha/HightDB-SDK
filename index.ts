@@ -123,14 +123,12 @@ export class HightDB implements HightDBClient {
         return new Promise(async (resolve, reject) => {
             const query = await this.sendCommand(sql)
             if (query.includes('ERRO:')) {
-                console.log("É um erro daqui")
                 reject(new Error(query));
             } else {
                 try {
                     const result = JSON.parse(query);
                     resolve(result);
                 } catch (error) {
-                    console.log("É outro erro ")
                     resolve(query)
                 }
             }
@@ -151,7 +149,6 @@ export class HightDB implements HightDBClient {
             });
 
             this.client.once('error', (err) => {
-                console.log("amigao")
                 reject(err);
             });
         });
@@ -159,7 +156,7 @@ export class HightDB implements HightDBClient {
 
 
 
-    buscar(query: Record): Promise<Result> {
+    buscar(db:string, query: Record): Promise<Result> {
         return new Promise(async (resolve, reject) => {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -177,7 +174,7 @@ export class HightDB implements HightDBClient {
                     }
                     v+=`${key}=${query[key]} `
                 }
-                const result = await this.query(`BUSCAR ${v}`);
+                const result = await this.query(`BUSCAR ${db} ${v}`);
                 if (typeof result === 'string') {
                     reject({
                         success: false,
@@ -202,7 +199,7 @@ export class HightDB implements HightDBClient {
         });
     }
 
-    editar(query: Record, where: Record): Promise<Result> {
+    editar(db:string, query: Record, where: Record): Promise<Result> {
         return new Promise(async (resolve, reject) => {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -231,7 +228,7 @@ export class HightDB implements HightDBClient {
                     }
                     w+=`${key}=${where[key]} `
                 }
-                const result = await this.query(`EDITAR ${v} ONDE ${w}`);
+                const result = await this.query(`EDITAR ${db} ${v} ONDE ${w}`);
                 if (typeof result === 'string' && result.includes('registro(s) atualizado(s).')) {
                     resolve({
                         success: true,
@@ -249,7 +246,7 @@ export class HightDB implements HightDBClient {
         });
     }
 
-    inserir(record: Record): Promise<Result> {
+    inserir(db:string, record: Record): Promise<Result> {
         return new Promise(async (resolve, reject) => {
             let v = ""
             for (const key in record) {
@@ -263,7 +260,7 @@ export class HightDB implements HightDBClient {
                 v+=`${key}=${record[key]} `
             }
             try {
-                const t = await this.query(`INSERIR ${v}`)
+                const t = await this.query(`INSERIR ${db} ${v}`)
                 if(typeof t === 'string' && t.startsWith('Registro inserido.')) {
                     resolve({
                         success: true,
@@ -281,7 +278,7 @@ export class HightDB implements HightDBClient {
         })
     }
 
-    deletar(query: Record): Promise<Result> {
+    deletar(db:string, query: Record): Promise<Result> {
         return new Promise(async (resolve, reject) => {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -299,7 +296,7 @@ export class HightDB implements HightDBClient {
                     }
                     v+=`${key}=${query[key]} `
                 }
-                const result = await this.query(`DELETAR ${v}`);
+                const result = await this.query(`DELETAR ${db} ${v}`);
                 if (typeof result === 'string' && result.includes('registro(s) removido(s).')) {
                     resolve({
                         success: true,
