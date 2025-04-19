@@ -66,6 +66,7 @@ export class HightDB implements HightDBClient {
     }
 
     createDatabase(name: string, schema: TableSchema, ifNotExists: boolean): Promise<Result> {
+        const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
             let sql = `CRIAR db ${name} VALORES `;
             for (const key in schema.fields) {
@@ -92,14 +93,16 @@ export class HightDB implements HightDBClient {
                                 code: 'create_db',
                                 success: true,
                                 message: query,
-                                records: null
+                                records: null,
+                                stack: stack
                             })
                         } else {
                             reject({
                                 code: 'create_db',
                                 success: false,
                                 message: query,
-                                records: null
+                                records: null,
+                                stack: stack
                             })
 
                         }
@@ -108,7 +111,8 @@ export class HightDB implements HightDBClient {
                             code: 'create_db',
                             success: true,
                             message: query,
-                            records: null
+                            records: null,
+                            stack: stack
                         })
                     }
                 }
@@ -117,7 +121,8 @@ export class HightDB implements HightDBClient {
                     code: 'create_db',
                     success: false,
                     message: e,
-                    records: null
+                    records: null,
+                    stack: stack
                 })
             }
         })
@@ -161,6 +166,7 @@ export class HightDB implements HightDBClient {
 
 
     buscar(db:string, query: Record): Promise<Result> {
+        const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -184,7 +190,8 @@ export class HightDB implements HightDBClient {
                         code: 'search',
                         success: false,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                     throw new Error(result)
                 } else {
@@ -192,7 +199,8 @@ export class HightDB implements HightDBClient {
                         code: 'search',
                         success: true,
                         message: '',
-                        records: result
+                        records: result,
+                        stack: stack
                     });
                 }
             } catch (error) {
@@ -200,13 +208,15 @@ export class HightDB implements HightDBClient {
                     code: 'search',
                     success: false,
                     message: error,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         });
     }
 
     editar(db:string, query: Record, where: Record): Promise<Result> {
+        const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -241,7 +251,8 @@ export class HightDB implements HightDBClient {
                         code: 'edit',
                         success: true,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                 }
             } catch (error) {
@@ -249,13 +260,15 @@ export class HightDB implements HightDBClient {
                     code: 'edit',
                     success: false,
                     message: error,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         });
     }
 
     inserir(db:string, record: Record): Promise<Result> {
+        const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
             let v = ""
             for (const key in record) {
@@ -275,7 +288,8 @@ export class HightDB implements HightDBClient {
                         code: 'insert',
                         success: true,
                         message: t,
-                        records: null
+                        records: null,
+                        stack: stack
                     })
                 }
             } catch (e) {
@@ -283,13 +297,15 @@ export class HightDB implements HightDBClient {
                     code: 'insert',
                     success: false,
                     message: e,
-                    records: null
+                    records: null,
+                    stack: stack
                 })
             }
         })
     }
 
     deletar(db:string, query: Record): Promise<Result> {
+        const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
             if (!query || Object.keys(query).length === 0) {
                 reject(new Error('Query não pode ser vazia'));
@@ -313,7 +329,8 @@ export class HightDB implements HightDBClient {
                         code: 'delete',
                         success: true,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                 }
             } catch (error) {
@@ -321,13 +338,15 @@ export class HightDB implements HightDBClient {
                     code: 'delete',
                     success: false,
                     message: error,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         })
     }
 
     listarDb(): Promise<Result> {
+        const stack = new Error().stack;
         return new Promise(async (resolve, reject) => {
             const result = await this.query(`LISTAR db`);
             try {
@@ -336,7 +355,8 @@ export class HightDB implements HightDBClient {
                         code: 'list',
                         success: false,
                         message: result,
-                        records: null
+                        records: null,
+                        stack: stack
                     });
                     throw new Error(result)
                 } else {
@@ -344,7 +364,8 @@ export class HightDB implements HightDBClient {
                         code: 'list',
                         success: true,
                         message: '',
-                        records: result
+                        records: result,
+                        stack: stack
                     });
                 }
             } catch (e) {
@@ -352,7 +373,8 @@ export class HightDB implements HightDBClient {
                     code: 'list',
                     success: false,
                     message: e,
-                    records: null
+                    records: null,
+                    stack: stack
                 });
             }
         })

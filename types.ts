@@ -16,6 +16,7 @@ export interface Result {
     success: boolean;
     message: string;
     records: Record[] | null;
+    stack: string | null | undefined;
 }
 
 export interface TableSchema {
