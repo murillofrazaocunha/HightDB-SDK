@@ -89,12 +89,14 @@ export class HightDB implements HightDBClient {
                     if(query.includes('já existe')) {
                         if(ifNotExists) {
                             resolve({
+                                code: 'create_db',
                                 success: true,
                                 message: query,
                                 records: null
                             })
                         } else {
                             reject({
+                                code: 'create_db',
                                 success: false,
                                 message: query,
                                 records: null
@@ -103,6 +105,7 @@ export class HightDB implements HightDBClient {
                         }
                     } else if(query.includes('Banco criado com schema')) {
                         resolve({
+                            code: 'create_db',
                             success: true,
                             message: query,
                             records: null
@@ -111,6 +114,7 @@ export class HightDB implements HightDBClient {
                 }
             } catch (e) {
                 reject({
+                    code: 'create_db',
                     success: false,
                     message: e,
                     records: null
@@ -184,6 +188,7 @@ export class HightDB implements HightDBClient {
                     throw new Error(result)
                 } else {
                     resolve({
+                        code: 'search',
                         success: true,
                         message: '',
                         records: result
@@ -191,6 +196,7 @@ export class HightDB implements HightDBClient {
                 }
             } catch (error) {
                 reject({
+                    code: 'search',
                     success: false,
                     message: error,
                     records: null
@@ -231,6 +237,7 @@ export class HightDB implements HightDBClient {
                 const result = await this.query(`EDITAR ${db} ${v} ONDE ${w}`);
                 if (typeof result === 'string' && result.includes('registro(s) atualizado(s).')) {
                     resolve({
+                        code: 'edit',
                         success: true,
                         message: result,
                         records: null
@@ -238,6 +245,7 @@ export class HightDB implements HightDBClient {
                 }
             } catch (error) {
                 reject({
+                    code: 'edit',
                     success: false,
                     message: error,
                     records: null
@@ -263,6 +271,7 @@ export class HightDB implements HightDBClient {
                 const t = await this.query(`INSERIR ${db} ${v}`)
                 if(typeof t === 'string' && t.startsWith('Registro inserido.')) {
                     resolve({
+                        code: 'insert',
                         success: true,
                         message: t,
                         records: null
@@ -270,6 +279,7 @@ export class HightDB implements HightDBClient {
                 }
             } catch (e) {
                 reject({
+                    code: 'insert',
                     success: false,
                     message: e,
                     records: null
@@ -299,6 +309,7 @@ export class HightDB implements HightDBClient {
                 const result = await this.query(`DELETAR ${db} ${v}`);
                 if (typeof result === 'string' && result.includes('registro(s) removido(s).')) {
                     resolve({
+                        code: 'delete',
                         success: true,
                         message: result,
                         records: null
@@ -306,6 +317,7 @@ export class HightDB implements HightDBClient {
                 }
             } catch (error) {
                 reject({
+                    code: 'delete',
                     success: false,
                     message: error,
                     records: null
@@ -327,6 +339,7 @@ export class HightDB implements HightDBClient {
                     throw new Error(result)
                 } else {
                     resolve({
+                        code: 'list',
                         success: true,
                         message: '',
                         records: result
@@ -334,6 +347,7 @@ export class HightDB implements HightDBClient {
                 }
             } catch (e) {
                 reject({
+                    code: 'list',
                     success: false,
                     message: e,
                     records: null

@@ -12,6 +12,7 @@ export interface Record {
 }
 
 export interface Result {
+    code: string;
     success: boolean;
     message: string;
     records: Record[] | null;
