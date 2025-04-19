@@ -181,6 +181,7 @@ export class HightDB implements HightDBClient {
                 const result = await this.query(`BUSCAR ${db} ${v}`);
                 if (typeof result === 'string') {
                     reject({
+                        code: 'search',
                         success: false,
                         message: result,
                         records: null
@@ -332,6 +333,7 @@ export class HightDB implements HightDBClient {
             try {
                 if (typeof result === 'string') {
                     reject({
+                        code: 'list',
                         success: false,
                         message: result,
                         records: null
