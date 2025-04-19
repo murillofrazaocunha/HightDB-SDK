@@ -123,12 +123,14 @@ export class HightDB implements HightDBClient {
         return new Promise(async (resolve, reject) => {
             const query = await this.sendCommand(sql)
             if (query.includes('ERRO:')) {
+                console.log("É um erro daqui")
                 reject(new Error(query));
             } else {
                 try {
                     const result = JSON.parse(query);
                     resolve(result);
                 } catch (error) {
+                    console.log("É outro erro ")
                     resolve(query)
                 }
             }
